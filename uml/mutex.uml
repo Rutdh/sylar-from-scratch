@@ -1,0 +1,18 @@
+@startuml 轮子·锁
+
+class Noncopyable
+note top of Noncopyable: 删除了拷贝构造和拷贝赋值运算符
+
+class RWMutex {
+    + RWMutex() 
+    + ~RWMutex() 
+    + void rdlock() 
+    + void wdlock()
+    + void unlock()
+    - pthread_rwlock_t m_lock
+}
+note bottom of RWMutex:对pthread_rwlock_t函数族的RAII封装
+
+Noncopyable <|-- RWMutex
+
+@enduml
