@@ -1,0 +1,123 @@
+@startuml 轮子·锁
+
+class Noncopyable
+note top of Noncopyable: 删除了拷贝构造和拷贝赋值运算符
+
+class RWMutex {
+    + RWMutex() 
+    + ~RWMutex() 
+    + void rdlock() 
+    + void wdlock()
+    + void unlock()
+    - pthread_rwlock_t m_lock
+}
+note bottom of RWMutex:对pthread_rwlock_t函数族的RAII封装
+
+class ScopedLockImpl {
+    + ScopedLockImpl(T& mutex)
+    + ~ScopedLockImpl()
+    + void lock()
+    + void unlock() 
+    - T& m_mutex
+    - bool m_locked
+}
+note left of ScopedLockImpl
+模版类,给所有的锁提供一个上层RAII抽象,
+构造加锁,析构解锁,另外提供lock()和unlock()
+end note
+
+class ReadScopedLockImpl {
+    + ReadScopedLockImpl(T& mutex)
+    + ~ReadScopedLockImpl()
+    + void lock()
+    + void unlock()
+    - T& m_mutex
+    - bool m_locked
+}
+
+class WriteScopedLockImpl {
+    + WriteScopedLockImpl(T& mutex)
+    + ~WriteScopedLockImpl()
+    + void lock()
+    + void unlock()
+    - T& m_mutex
+    - bool m_locked
+}
+
+class RWMutex {
+    == 读写锁实例化类型接口 ==
+    + typedef ReadScopedLockImpl<RWMutex> ReadLock
+    + typedef WriteScopedLockImpl<RWMutex> WriteLock
+    == RAII封装pthread_rwlock_t函数族 ==
+    + RWMutex()
+    + ~RWMutex()
+    + void rdlock()
+    + void wrlock()
+    + void unlock()
+    - pthread_rwlock_t m_lock
+}
+
+class Mutex {
+    == 提供上层统一RAII锁接口 ==
+    + typedef ScopedLockImpl<Mutex> Lock
+    == pthread_mutex_t函数族RAII封装 ==
+    + Mutex()
+    + ~Mutex()
+    + void lock()
+    + void unlock()
+    - pthread_mutex_t m_mutex
+}
+
+class NullMutex {
+    + typedef ScopedLockImpl<Mutex> Lock
+    + NullMutex()
+    + ~NullMutex()
+    + void lock()
+    + void unlock()
+}
+note left of NullMutex:空锁,里面的实现都是空的,用于调试
+
+class NullRWMutex {
+    + typedef ReadScopedLockImpl<RWMutex> ReadLock
+    + typedef WriteScopedLockImpl<RWMutex> WriteLock
+    + RWMutex()
+    + ~RWMutex()
+    + void rdlock()
+    + void wrlock()
+    + void unlock()
+}
+note left of NullMutex:空读写锁,里面的实现都是空的,用于调试
+
+class Spinlock {
+    == 提供上层统一RAII锁接口 ==
+    + typedef ScopedLockImpl<Spinlock> Lock
+    == pthread_spinlock_t函数族RAII封装 ==
+    + Spinlock()
+    + ~Spinlock()
+    + void lock()
+    + void unlock()
+    - pthread_spinlock_t m_mutex
+}
+
+class CASLock {
+    == 提供上层统一RAII锁接口 ==
+    + typedef ScopedLockImpl<CASLock> Lock
+    == std::atomic_flag clear, set RAII封装 ==
+    + CASLock()
+    + ~CASLock()
+    - volatile std::atomic_flag m_mutex
+}
+note left of CASLock
+按理来说volatile和std::atomic_flag没必要同时用
+std::atomic_flag通过set和clear操作来实现自旋锁
+end note
+
+/' 对象关系交互 '/
+Noncopyable <|-- RWMutex
+Noncopyable <|-- Mutex
+Noncopyable <|-- NullMutex
+Noncopyable <|-- NullRWMutex
+Noncopyable <|-- Spinlock
+Noncopyable <|-- CASLock
+
+@enduml

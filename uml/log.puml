@@ -1,0 +1,187 @@
+@startuml log
+
+class LogLevel {
+    + enum Level
+    + {static} const char *ToString(LogLevel::Level level)
+    + {static} const char *FromString(const string& str)
+}
+
+class LogEvent {
+    + typedef std::shared_ptr<LogEvent> ptr
+    == 构造函数,创建一个日志器,存储数据并可以接受数据的流入 ==
+    + LogEvent(...)
+    == 其他成员函数 == 
+    + LogLevel::Level getLevel() const
+    + std::string getContent() const
+    + std::string getFile() const
+    + int32_t getLine() const
+    + int64_t getElapse() const
+    + uint32_t getThreadId() const
+    + uint64_t getFiberId() const
+    + time_t getTime() const
+    + const std::string &getThreadName() const
+    + std::stringstream &getSS()
+    + const std::string &getLoggerName() const
+    + void printf(const char *fmt, ...)
+    + void vprintf(const char *fmt, va_list ap)
+    == 私有成员变量 ==
+    - LogLevel::Level m_level
+    - std::stringstream m_ss
+    - const char *m_file = nullptr
+    - int32_t m_line = 0
+    - int64_t m_elapse = 0
+    - uint32_t m_threadId = 0
+    - uint64_t m_fiberId = 0
+    - time_t m_time
+    - std::string m_threadName
+    - std::string m_loggerName
+}
+
+class LogFormatter {
+    + typedef std::shared_ptr<LogFormatter> ptr
+    == 构造函数,创建一个日志格式器,接受一个字符串表示日志格式 ==
+    + LogFormatter(const string& str = default)
+    == 解析日志模版字符串 == 
+    + void init()
+    == ==
+    + bool isError() const
+    + std::string format(LogEvent::ptr event)
+    + std::ostream &format(std::ostream &os, LogEvent::ptr event)
+    + std::string getPattern() const
+    - std::string m_pattern
+    - std::vector<FormatItem::ptr> m_items
+    - bool m_error = false
+}
+
+abstract class FormatItem {
+    + typedef std::shared_ptr<FormatItem> ptr
+    + {abstract} ~FormatItem()
+    + {abstract} format(std::ostream &os, LogEvent::ptr event) = 0
+}
+
+class MessageFormatItem implements FormatItem {
+    + MessageFormatItem(const std::string &str)
+    + void format(std::ostream &os, LogEvent::ptr event)
+}
+
+class LevelFormatItem implements FormatItem {
+    + LevelFormatItem(const std::string &str)
+    + void format(std::ostream &os, LogEvent::ptr event)
+}
+
+class ElapseFormatItem implements FormatItem {
+    + ElapseFormatItem(const std::string &str)
+    + void format(std::ostream &os, LogEvent::ptr event)
+}
+
+class LoggerNameFormatItem implements FormatItem {
+    + LoggerNameFormatItem(const std::string &str)
+    + void format(std::ostream &os, LogEvent::ptr event)
+}
+
+class ThreadIdFormatItem implements FormatItem {
+    + ThreadIdFormatItem(const std::string &str)
+    + void format(std::ostream &os, LogEvent::ptr event)
+}
+
+class FiberIdFormatItem implements FormatItem {
+    + FiberIdFormatItem(const std::string &str)
+    + void format(std::ostream &os, LogEvent::ptr event)
+}
+
+class FileNameFormatItem implements FormatItem {
+    + FileNameFormatItem(const std::string &str)
+    + void format(std::ostream &os, LogEvent::ptr event)
+}
+
+class LineFormatItem implements FormatItem {
+    + LineFormatItem(const std::string &str)
+    + void format(std::ostream &os, LogEvent::ptr event)
+}
+
+class NewLineFormatItem implements FormatItem {
+    + NewLineFormatItem(const std::string &str)
+    + void format(std::ostream &os, LogEvent::ptr event)
+}
+
+class TabFormatItem implements FormatItem {
+    + TabFormatItem(const std::string &str)
+    + void format(std::ostream &os, LogEvent::ptr event)
+}
+
+class PercentSignFormatItem implements FormatItem {
+    + PercentSignFormatItem(const std::string &str)
+    + void format(std::ostream &os, LogEvent::ptr event)
+}
+
+class ThreadNameFormatItem implements FormatItem {
+    + ThreadNameFormatItem(const std::string &str)
+    + void format(std::ostream &os, LogEvent::ptr event)
+}
+
+class DateTimeFormatItem implements FormatItem {
+    + ThreadNameFormatItem(const std::string &str = default)
+    + void format(std::ostream &os, LogEvent::ptr event)
+}
+
+class StringFormatItem implements FormatItem {
+    + StringFormatItem(const std::string &str)
+    + void format(std::ostream &os, LogEvent::ptr event)
+    - std::string m_string
+}
+note bottom of StringFormatItem
+所有的FormatItem子类的format函数第一个形参都是[in/out],
+第二个形参string大部分时候没用,只有StringFormatItem,DateTimeFormatItem
+会用到,前者用来输入到流,后者则用这个参数来确定日期格式.
+end note
+
+abstract class LogAppender {
+    + typedef std::shared_ptr<LogAppender> ptr
+    + typedef Spinlock MutexType
+    + LogAppender(LogFormatter::ptr default_formatter)
+    + {abstract} ~LogAppender()
+    + void setFormatter(LogFormatter::ptr val)
+    + LogFormatter::ptr getFormatter()
+    + {abstract} void log(LogEvent::ptr event) = 0
+    + {abstract} std::string toYamlString() = 0
+    # MutexType m_mutex
+    # LogFormatter::ptr m_formatter
+    # LogFormatter::ptr m_defaultFormatter
+}
+
+class StdoutLogAppender implements LogAppender {
+    + typedef std::shared_ptr<StdoutLogAppender> ptr
+    + StdoutLogAppender()
+    + void log(LogEvent::ptr event)
+    + std::string toYamlString()
+}
+
+class FileLogAppender implements LogAppender {
+    + typedef std::shared_ptr<FileLogAppender> ptr
+    + FileLogAppender()
+    + bool reopen()
+    + void log(LogEvent::ptr event)
+    + std::string toYamlString()
+    == 文件路径和名字 ==
+    - std::string m_filename
+    == ==
+    - std::ofstream m_filestream
+    - uint64_t m_lastTime = 0
+    - bool m_reopenError = false
+}
+
+class Logger {
+    + typedef std::shared_ptr<Logger> ptr
+    + typedef Spinlock MutexType
+    + Logger
+}
+
+
+
+/' class SubclassOfFormatItem
+note left of SubclassOfFormatItem:FormatItem的实现子类的统称
+SubclassOfFormatItem --* LogFormatter '/
+FormatItem --* LogFormatter
+LogLevel --* LogEvent
+
+@enduml

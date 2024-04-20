@@ -65,3 +65,4 @@ test_daemon
 # log
 system.txt
 log.txt
+out/
