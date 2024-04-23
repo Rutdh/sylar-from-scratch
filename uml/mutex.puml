@@ -26,7 +26,7 @@ note left of ScopedLockImpl
 构造加锁,析构解锁,另外提供lock()和unlock()
 end note
 
-class ReadScopedLockImpl {
+class ReadScopedLockImpl implements RWMutex {
     + ReadScopedLockImpl(T& mutex)
     + ~ReadScopedLockImpl()
     + void lock()
@@ -35,7 +35,7 @@ class ReadScopedLockImpl {
     - bool m_locked
 }
 
-class WriteScopedLockImpl {
+class WriteScopedLockImpl implements RWMutex{
     + WriteScopedLockImpl(T& mutex)
     + ~WriteScopedLockImpl()
     + void lock()
@@ -75,7 +75,7 @@ class NullMutex {
     + void lock()
     + void unlock()
 }
-note left of NullMutex:空锁,里面的实现都是空的,用于调试
+note bottom of NullMutex:空锁,里面的实现都是空的,用于调试
 
 class NullRWMutex {
     + typedef ReadScopedLockImpl<RWMutex> ReadLock
@@ -86,7 +86,7 @@ class NullRWMutex {
     + void wrlock()
     + void unlock()
 }
-note left of NullMutex:空读写锁,里面的实现都是空的,用于调试
+note bottom of NullMutex:空读写锁,里面的实现都是空的,用于调试
 
 class Spinlock {
     == 提供上层统一RAII锁接口 ==
@@ -119,5 +119,6 @@ Noncopyable <|-- NullMutex
 Noncopyable <|-- NullRWMutex
 Noncopyable <|-- Spinlock
 Noncopyable <|-- CASLock
+
 
 @enduml

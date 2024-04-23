@@ -95,4 +95,5 @@
         "cfenv": "cpp",
         "valarray": "cpp"
     },
+    "C_Cpp.default.compilerPath": "/usr/bin/g++-9",
 }
